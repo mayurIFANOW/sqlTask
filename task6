@@ -1,0 +1,79 @@
+  
+Query:
+
+2.	select email from market_user where email LIKE '%=_%$%' ESCAPE '=' or email like '%$%=$%' ESCAPE '=';
+
+3.	advisor_id: 11236
+
+	select 
+		mf.advisor_id, mfs.amc_code, sum((mf.total_balance_Unit * mfs.nav)) Total_scheme_aum
+	FROM 
+		`mutual_fund_scheme_master` mfs
+		JOIN
+ 		( SELECT advisor_id, scheme_code, sum(balance_unit) total_balance_Unit FROM mutual_fund where advisor_id= 11236 GROUP BY scheme_code) mf
+ 		on mf.scheme_code= mfs.scheme_code
+ 	GROUP by mfs.amc_code
+
+4.	SELECT a.accord_amc_code, a.amc_name, a.amc_logo_url, b.totalaum from amc_master as a inner join accord_amc_aum as b on a.accord_amc_code = b.amc_code where a.amc_name  like '%Baroda%';
+
+5.	select advisor_id, count(client_id) from mutual_fund  GROUP by advisor_id;
+
+6.	select mf.client_id, sum(mft.amount * mft.effect) 'Last_5Day_Aum' from mutual_fund mf inner JOIN (select  * from mutual_fund_transaction where transaction_date  BETWEEN '2022-5-13' and '2022-5-17' ) mft on mf.id=mft.mutual_fund_id where mf.client_id=193237
+
+7.	**With Mutual_Fund_Scheme_Master**
+	select 
+		mf.advisor_id, sum(mf.Total_Scheme_balance * mfs.nav) Total_Scheme_Aum 
+	from 
+		(select advisor_id, scheme_code, sum(balance_unit) Total_Scheme_Balance from mutual_fund where rt_master_id in (2,14) and advisor_id=5656 GROUP by scheme_code) mf
+		left join 
+		mutual_fund_scheme_master mfs 
+		on
+		mf.scheme_code= mfs.scheme_code
+
+
+	**with Historical_nav**
+select 
+	mm.Total_Scheme_Balance *h.nav,mm.id FROM 
+historical_nav h INNER join (
+	select amfi_code, sum(balance_unit) as Total_Scheme_Balance ,mfs.id 
+	from mutual_fund m
+	INNER join 
+	mutual_fund_scheme_master mfs
+	on
+	mfs.id=m.mutual_fund_scheme_master_id
+	where rt_master_id in (2,14) and advisor_id=5656 and balance_unit>0 and m.is_active=1 GROUP by mutual_fund_scheme_master_id) mm
+	 on mm.amfi_code=h.amfi_code where `date`= '2022-05-19'
+
+
+8.	SELECT sum(balance_unit) Total_balance_unit, folio_number, scheme_code,arn_ria_details_id FROM `mutual_fund`  WHERE folio_number='4946040/67' and scheme_code='D872' and parent_id=5432 and arn_ria_details_id =79
+
+
+
+10. find the total aum of client for the dte 26 jan 2022
+	SELECT   sum(total_unit * ah.nav) amount_on_scheme
+	from 	
+	(	SELECT mft.mutual_fund_scheme_master_id, sum(units* effect) as 'total_unit'
+		FROM 
+				mutual_fund mf 
+			INNER JOIN
+				mutual_fund_transaction mft
+			on 
+				mf.id = mft.mutual_fund_id
+		where client_id = 208452
+		group by scheme_code
+    ) mm
+	inner JOIN
+		mutual_fund_scheme_master mfsc
+	on mfsc.id = mm.mutual_fund_scheme_master_id
+	LEFT join 
+		asset_historical ah
+	on mfsc.amfi_code = ah.amfi_code
+	where  ah.nav_date = '2022-1-26'
+
+
+
+**finding Latest scheme nav from historical_nav:
+
+	select amfi_code, nav, date from historical_nav hnav where date >'2022-5-1' and (amfi_code,date) in (select amfi_code, max(date) from historical_nav where date >= '2022-5-1' group by amfi_code )
+
+
